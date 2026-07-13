@@ -2,4 +2,6 @@ pillow
 tkcalendar
 reportlab
 python-dateutil
-tkinter
+tk
+requests
+keyring

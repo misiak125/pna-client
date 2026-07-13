@@ -238,8 +238,7 @@ def add_brand(brand, brand_cbox, new_brand_cbox):
         return
     try:
         con.add_brand(brand)
-        brand_cbox["values"] = con.get_brands_list()
-        new_brand_cbox["values"] = con.get_brands_list()
+        new_brand_cbox["values"] = brand_cbox["values"] = con.get_brands_list()
         messagebox.showinfo("Sukces", "Pomyślnie dodano markę")
     except:
         messagebox.showerror("Error", "Nie udało się dodać marki")
@@ -276,13 +275,12 @@ def delete_brand(brand, brand_cbox, new_brand_cbox):
     if models is not None and len(models)>0:
         if not ensure_delete_models(): return
     try:
-        con.drop_brands_models(models)
+        con.drop_brands_models(models, brand)
         con.drop_brand(brand)
-        brand_cbox["values"] = con.get_brands_list()
-        new_brand_cbox["values"] = con.get_brands_list()
+        new_brand_cbox["values"] = brand_cbox["values"] = con.get_brands_list()
         messagebox.showinfo("Sukces", "Pomyślnie usunięto markę")
-    except:
-        messagebox.showerror("Error", f"Nie udało się usunąć marki")
+    except Exception as e:
+        messagebox.showerror("Error", f"Nie udało się usunąć marki {e}")
 
 
 def delete_colour(colour, colour_cbox):

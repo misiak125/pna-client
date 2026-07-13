@@ -7,7 +7,7 @@ import src.utils.buttons as but
 import time
 from datetime import datetime
 from PIL import Image, ImageTk
-from src import resource_path
+from src import resource_path, APP_NAME
 import os
 import json
 from dateutil.relativedelta import relativedelta
@@ -16,7 +16,7 @@ from dateutil.relativedelta import relativedelta
 class main_window:    
     def __init__(self, root):
         self.root = root
-        self.root.title("Zamówienia Motorland")
+        self.root.title(APP_NAME)
         self.root.geometry("1500x900")
 		
 
@@ -109,11 +109,15 @@ class main_window:
         change_date_button = Button(tab, text="Zmień datę", command=lambda: but.change_group_date_by_spec(self.free_products_tree, self.root))
         change_date_button.pack(padx=10, pady=(0, 10), side="right")
         '''
+
+        search_button = Button(tab, text="Szukaj", command=lambda: con.fake_commit());
+        search_button.pack(padx=10, pady=(0, 10), side="right")
         free_prod_search_label = Label(tab, text="Wyszukaj:")
         free_prod_search_label.pack(padx=(15, 10), pady=(0, 10), side="left")
         self.free_prod_search_entry = ttk.Entry(tab)
         self.free_prod_search_entry.pack(padx=10, pady=(10, 20), fill="x")
-        self.free_prod_search_entry.bind("<KeyRelease>", lambda x: con.fake_commit())
+        #self.free_prod_search_entry.bind("<KeyRelease>", lambda x: con.fake_commit())
+        self.free_prod_search_entry.bind("<Return>", lambda x: con.fake_commit())
 
 
 
@@ -197,11 +201,14 @@ class main_window:
         fun.get_selected_element_id(self.all_products_tree), fun.get_is_reserved(self.all_products_tree), self.root))
         create_reservation_button.pack(padx=10, pady=(0, 10), side="right")
 
+        search_button = Button(tab, text="Szukaj", command=lambda: con.fake_commit());
+        search_button.pack(padx=10, pady=(0, 10), side="right")
         all_prod_search_label = Label(tab, text="Wyszukaj:")
         all_prod_search_label.pack(padx=(15, 10), pady=(0, 10), side="left")
         self.all_prod_search_entry = ttk.Entry(tab)
         self.all_prod_search_entry.pack(padx=10, pady=(5, 15), fill="x")
-        self.all_prod_search_entry.bind("<KeyRelease>", lambda x: con.fake_commit())
+        #self.all_prod_search_entry.bind("<KeyRelease>", lambda x: con.fake_commit())
+        self.all_prod_search_entry.bind("<Return>", lambda x: con.fake_commit())
 
 
     def create_customers_tab(self, tab):
@@ -225,7 +232,7 @@ class main_window:
         self.customers_tree.column("company_name", width="120")
 
         self.customers_tree.bind("<Double-1>", lambda x: but.on_customer_click(self.root))
-        self.customers_tree.pack(fill="both", expand=True, padx=10, pady=10)
+        self.customers_tree.pack(fill="both", expand=True, padx=10, pady=(10, 0))
 
         edit_button = Button(tab, text="Edytuj", command=lambda: self.edit_customer(fun.get_selected_element_id(self.customers_tree), self.root))
         edit_button.pack(padx=10, pady=10, side="right")
@@ -238,11 +245,14 @@ class main_window:
         delete_button.pack(pady=10, padx=10, side="left")
 
         
+        search_button = Button(tab, text="Szukaj", command=lambda: con.fake_commit());
+        search_button.pack(padx=10, pady=10, side="right")
         customers_search_label = Label(tab, text="Wyszukaj:", padx=10)
         customers_search_label.pack(padx=0, pady=10, side="left")
         self.customers_search_entry = ttk.Entry(tab)
         self.customers_search_entry.pack(padx=10, pady=20, fill="x")
-        self.customers_search_entry.bind("<KeyRelease>", lambda x: con.fake_commit())
+        #self.customers_search_entry.bind("<KeyRelease>", lambda x: con.fake_commit())
+        self.customers_search_entry.bind("<Return>", lambda x: con.fake_commit())
 
 
     def create_new_customer(self, lasttop, callback = None, select = lambda: []):
@@ -355,7 +365,7 @@ class main_window:
         red_icon = fun.create_colored_icon("#FF2800")
         self.reservations_tree.icons = {True: green_icon, False: red_icon}
 
-        self.reservations_tree.pack(fill="both", expand=True, padx=10, pady=10)
+        self.reservations_tree.pack(fill="both", expand=True, padx=10, pady=(10, 0))
 
         delete_button = Button(tab, text="Usuń", 
         command=lambda: [but.delete_reservation(fun.get_selected_element_id(self.reservations_tree), self.root)])
@@ -365,11 +375,14 @@ class main_window:
         show_more_button.pack(padx=10, pady=10, side="right")
 
 
+        search_button = Button(tab, text="Szukaj", command=lambda: con.fake_commit());
+        search_button.pack(padx=10, pady=10, side="right")
         reservation_search_label = Label(tab, text="Wyszukaj:", padx=10)
         reservation_search_label.pack(padx=0, pady=10, side="left")
         self.reservation_search_entry = ttk.Entry(tab)
         self.reservation_search_entry.pack(padx=10, pady=20, fill="x")
-        self.reservation_search_entry.bind("<KeyRelease>", lambda x: con.fake_commit())
+        #self.reservation_search_entry.bind("<KeyRelease>", lambda x: con.fake_commit())
+        self.reservation_search_entry.bind("<Return>", lambda x: con.fake_commit())
 
 
     def show_reservation_details(self, res_id, lasttop):

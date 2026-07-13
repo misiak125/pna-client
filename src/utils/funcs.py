@@ -224,7 +224,8 @@ reservation_search, show_finalized, all_products_tree, show_sold, show_reserved,
         res.Reservation.date.strftime("%d-%m-%Y %H:%M"),
         res.Product.brand, res.Product.model, res.Product.colour, res.Reservation.adnotation]):
 
-            reservations_tree.insert("", "end", image=reservations_tree.icons[res.Reservation.paid], values=(res.Reservation.id, res.Reservation.string_order_id, res.Customer.name,
+            reservations_tree.insert("", "end", image=reservations_tree.icons[res.Reservation.paid], 
+            values=(res.Reservation.id, res.Reservation.string_order_id, res.Customer.name,
             res.Reservation.date.strftime("%d-%m-%Y %H:%M"),
             res.Product.brand, res.Product.model, res.Product.colour, adnotation_text), tags=(tag,))
             i+=1
@@ -247,7 +248,7 @@ reservation_search, show_finalized, all_products_tree, show_sold, show_reserved,
 
     i=0
     all_prod_search_list = all_prod_search.strip().lower().split()
-    
+
     for product in products:
         if product.Reservation is None:
             czy_rezerwowany = "NIE"
@@ -513,7 +514,7 @@ def generate_pdf_confirmation(order_id):
     if reservation.Customer.pesel != "" and reservation.Customer.pesel is not None:
         buyer_details.append("PESEL: "+reservation.Customer.pesel)
     if reservation.Customer.adress != "" and reservation.Customer.adress is not None:
-        buyer_details.append("Pełny adres: " + reservation.Customer.adress.replace("\n", ", "))
+        buyer_details.append("Pełny adres: " + reservation.Customer.adress.replace("\n", ", ").replace("\t", ""))
 
     pdf.drawString(padding, lasty, "KUPUJĄCY:")
     pdf.line(padding, lasty-3, padding+62, lasty-3)

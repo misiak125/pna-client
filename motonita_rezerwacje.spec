@@ -7,37 +7,38 @@ babel_data = collect_data_files('babel')
 
 a = Analysis(
     ['main.py'],
-    pathex=['.' , './src' , './src/utils/' , './src/views/'],
+    pathex=['.', './src', './src/utils/', './src/views/'],
     binaries=[],
     datas=[
-        ('src/static/*', 'static')
+        ('src/static/*', 'static'),
         (r'C:\Python311\tcl\*', 'tcl'),
         (r'C:\Python311\Lib\lib-tk\*', 'lib-tk'),
-        ('src/static/splash.png', 'splash.png'),
-        ('incon.ico', 'icon.ico')
+        ('src/static/splash.png', '.'),
+        ('icon.ico', '.')
     ] + tkinter_data + babel_data,
     hiddenimports=[
-        'babel.numbers',
-        'babel.dates',
-        'PIL._tkinter_finder',
+        'tkinter.ttk',
+        'tkinter.font',
+        'tkinter.filedialog',
+        'tkcalendar',
         'PIL.Image', 
         'PIL.ImageTk',
         'PIL._tkinter_finder',
         'reportlab.pdfgen',
         'reportlab.lib',
         'reportlab.rl_settings',
+        'babel.numbers',
+        'babel.dates',
         'dateutil.tz',
         'dateutil.parser',
-        'tkinter.filedialog',
-        'tkinter.font',
-        'tkcalendar',
-        "tkinter.ttk", 
-        "tkinter.font"
+        'requests',
+        'keyring',
+        'keyring.backends.Windows'
     ],
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
-    excludes=[],
+    excludes=['sqlalchemy', 'pymysql', 'python-dotenv', 'flask'],
     noarchive=False,
     optimize=0,
 )
@@ -48,7 +49,7 @@ exe = EXE(
     a.scripts,
     [],
     exclude_binaries=True,
-    name='motonita_rezerwacje',
+    name='PNA',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
@@ -60,7 +61,7 @@ exe = EXE(
     codesign_identity=None,
     entitlements_file=None,
     icon='icon.ico',
-    splash = 'src/static/splash.png'
+    splash='src/static/splash.png'
 )
 coll = COLLECT(
     exe,
@@ -69,5 +70,5 @@ coll = COLLECT(
     strip=False,
     upx=True,
     upx_exclude=[],
-    name='motonita_rezerwacje',
+    name='PNA', 
 )

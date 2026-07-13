@@ -11,8 +11,6 @@ a = Analysis(
     binaries=[],
     datas=[
         ('src/static/*', 'static'),
-        (r'C:\Python311\tcl\*', 'tcl'),
-        (r'C:\Python311\Lib\lib-tk\*', 'lib-tk'),
         ('src/static/splash.png', '.'),
         ('icon.ico', '.')
     ] + tkinter_data + babel_data,

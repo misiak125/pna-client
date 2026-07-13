@@ -1,0 +1,7 @@
+pillow
+tkcalendar
+reportlab
+python-dateutil
+tk
+requests
+keyring

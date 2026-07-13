@@ -17,7 +17,7 @@ class main_window:
     def __init__(self, root):
         self.root = root
         self.root.title(APP_NAME)
-        self.root.geometry("1500x900")
+        self.root.geometry("1200x750")
 		
 
         ico = Image.open(resource_path(os.path.join('static', 'icon.png')))

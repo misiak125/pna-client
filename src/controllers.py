@@ -3,9 +3,10 @@ from datetime import datetime
 import os
 from tkinter import messagebox
 from urllib.parse import urlparse
-from src import HEADERS, SERVER_URL
+from src import SERVER_URL
 
-
+HEADERS = {}
+refresh_callback = None
 
 class MockObj:
     """klasa pozwalająca na przypisywanie atrybutów po kropce (imitacja SQLAlchemy)"""
@@ -442,7 +443,7 @@ def get_all_reservations():
     return get_full_reservations()
 
 def fake_commit():
-    from . import refresh_after_commit
-    refresh_after_commit()
+    if refresh_callback:
+        refresh_callback()
     pass
 

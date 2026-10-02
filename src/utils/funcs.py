@@ -683,10 +683,10 @@ def slownie(liczba:int, skala:str='długa', jeden:bool=True):
 			continue
 		
 		if d == 1 and j > 0: #łączymy dziesiątki i jedności w -naście
-			 n = j
-			 d = j = 0
+			n = j
+			d = j = 0
 		else:
-			 n = 0
+			n = 0
 		
 		#wybór formy gramatycznej
 		if j == 1 and s + d + n == 0:

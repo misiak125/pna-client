@@ -454,7 +454,10 @@ def generate_pdf_confirmation(order_id):
     file_name = re.sub(r'[^a-zA-Z0-9]', '', reservation.Customer.name.lower())
     file_num = 1
     while os.path.exists(os.path.join(directory, file_name+str(file_num)+'.pdf')): file_num+=1
-    file_name=file_name+str(file_num)+'.pdf'
+    if file_num != 1:
+        file_name = file_name+str(file_num)+'.pdf'
+    else:
+        file_name = file_name+'.pdf'
     header = Image.open(resource_path(os.path.normpath('static/header2.jpg')))
     #print(pdfmetrics.getRegisteredFontNames())
     try:

@@ -8,6 +8,7 @@ from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.lib.units import cm, mm
 from reportlab.lib.utils import simpleSplit
+from pathlib import Path
 import os
 import platform
 import subprocess
@@ -706,7 +707,7 @@ def slownie(liczba:int, skala:str='długa', jeden:bool=True):
 	return ' '.join(s for s in słowa if s)
 
 
-def print_file(file_path):
+def open_file_with(filepath: str | Path, force_chooser: bool = False) -> None:
     
     if not os.path.exists(file_path): 
         file_path = file_path.replace('Użytkownicy', 'Users', 1)
@@ -716,22 +717,57 @@ def print_file(file_path):
         file_path = file_path.replace('Users', 'Użytkownicy', 1)
         file_path = file_path.replace('Documents', 'Dokumenty', 1)
     
-    system_name = platform.system()
+    """Opens a file with the default application associated with its type, 
+    or prompts the user to choose an application.
 
-    if system_name == "Windows":
-        acrobat_paths = [
-            r"C:\Program Files\Adobe\Acrobat DC\Acrobat\Acrobat.exe",
-            r"C:\Program Files (x86)\Adobe\Acrobat Reader DC\Reader\AcroRd32.exe"
-        ]
-        
-        for acrobat_path in acrobat_paths:
-            if os.path.exists(acrobat_path):
-                subprocess.run([acrobat_path, file_path])
-                break
-    elif system_name == "Linux":    
-        subprocess.run(["xdg-open", file_path])
+    :param filepath: Path to file.
+    :param force_chooser: If True, forces the display of the application chooser dialog.
+                          If False, opens the file with the default application associated with its type.
+    """
+    path = Path(filepath).resolve()
+    if not path.exists():
+        raise FileNotFoundError(f"Plik nie istnieje: {path}")
+
+    current_os = platform.system()
+
+    if current_os == "Windows":
+        if force_chooser:
+            subprocess.run(
+                ["rundll32.exe", "shell32.dll,OpenAs_RunDLL", str(path)],
+                check=True,
+            )
+        else:
+            os.startfile(str(path))
+
+    elif current_os == "Darwin":  # macOS
+        if force_chooser:
+            apple_script = (
+                f'set theFile to POSIX file "{path}" as alias\n'
+                f'tell application "Finder"\n'
+                f"    activate\n"
+                f"    open theFile using (choose application with prompt \"Wybierz program do otwarcia:\")\n"
+                f"end tell"
+            )
+            subprocess.run(["osascript", "-e", apple_script], check=True)
+        else:
+            subprocess.run(["open", str(path)], check=True)
+
+    elif current_os == "Linux":
+        if force_chooser:
+            try:
+                subprocess.run(
+                    ["gtk-launch", "--help"],
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL,
+                )
+                subprocess.run(["gio", "open", str(path)], check=True)
+            except (subprocess.SubprocessError, FileNotFoundError):
+                subprocess.run(["xdg-open", str(path)], check=True)
+        else:
+            subprocess.run(["xdg-open", str(path)], check=True)
+
     else:
-        print("Unsupported OS")
+        raise OSError(f"Nieobsługiwany system operacyjny: {current_os}")
     
 
 def change_dates(id_list, new_date):

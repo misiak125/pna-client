@@ -598,7 +598,7 @@ def generate_pdf_confirmation(order_id):
 
 
     
-    lines = simpleSplit(f"Termin realizacji zamówienia: {reservation.Reservation.term}", font, font_size, max_width)
+    lines = simpleSplit(f"Przewidywany termin realizacji zamówienia: {reservation.Reservation.term}", font, font_size, max_width)
     for line in lines:
         pdf.drawString(padding, lasty, line)
         lasty-=interline

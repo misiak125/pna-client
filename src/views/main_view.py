@@ -118,6 +118,7 @@ class main_window:
         self.free_prod_search_entry.pack(padx=10, pady=(10, 20), fill="x")
         #self.free_prod_search_entry.bind("<KeyRelease>", lambda x: con.fake_commit())
         self.free_prod_search_entry.bind("<Return>", lambda x: con.fake_commit())
+        self.free_prod_search_entry.bind("<FocusOut>", lambda x: con.fake_commit())
 
 
 
@@ -209,6 +210,7 @@ class main_window:
         self.all_prod_search_entry.pack(padx=10, pady=(5, 15), fill="x")
         #self.all_prod_search_entry.bind("<KeyRelease>", lambda x: con.fake_commit())
         self.all_prod_search_entry.bind("<Return>", lambda x: con.fake_commit())
+        self.all_prod_search_entry.bind("<FocusOut>", lambda x: con.fake_commit())
 
 
     def create_customers_tab(self, tab):
@@ -253,6 +255,7 @@ class main_window:
         self.customers_search_entry.pack(padx=10, pady=20, fill="x")
         #self.customers_search_entry.bind("<KeyRelease>", lambda x: con.fake_commit())
         self.customers_search_entry.bind("<Return>", lambda x: con.fake_commit())
+        self.customers_search_entry.bind("<FocusOut>", lambda x: con.fake_commit())
 
 
     def create_new_customer(self, lasttop, callback = None, select = lambda: []):
@@ -383,6 +386,7 @@ class main_window:
         self.reservation_search_entry.pack(padx=10, pady=20, fill="x")
         #self.reservation_search_entry.bind("<KeyRelease>", lambda x: con.fake_commit())
         self.reservation_search_entry.bind("<Return>", lambda x: con.fake_commit())
+        self.reservation_search_entry.bind("<FocusOut>", lambda x: con.fake_commit())
 
 
     def show_reservation_details(self, res_id, lasttop):

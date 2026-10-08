@@ -5,7 +5,7 @@ from datetime import datetime
 from math import trunc
 from reportlab.pdfgen import canvas 
 from reportlab.pdfbase import pdfmetrics 
-from reportlab.pdfbase.ttfonts import TTFont
+from reportlab.pdfbase.ttfonts import TTFError, TTFont
 from reportlab.lib.units import cm, mm
 from reportlab.lib.utils import simpleSplit
 from pathlib import Path
@@ -461,17 +461,32 @@ def generate_pdf_confirmation(order_id):
         file_name = file_name+'.pdf'
     header = Image.open(resource_path(os.path.normpath('static/header2.jpg')))
     #print(pdfmetrics.getRegisteredFontNames())
-    try:
-        pdfmetrics.registerFont(TTFont('Arial', 'arial.ttf')) 
-        pdfmetrics.registerFont(TTFont('Arial-Bold', 'arialbd.ttf'))
-    except:
-        pdfmetrics.registerFont(TTFont('Arial', 'Arial.ttf')) 
-        pdfmetrics.registerFont(TTFont('Arial-Bold', 'Arialbd.ttf'))
+    ARIAL_CANDIDATES = [
+        ('arial.ttf', 'arialbd.ttf'),
+        ('Arial.ttf', 'Arialbd.ttf'),
+        ('Arial.ttf', 'Arial Bold.ttf'),
+    ]
+
+    font = 'Helvetica'
+    font_bold = 'Helvetica-Bold'
+
+    for regular_file, bold_file in ARIAL_CANDIDATES:
+        try:
+            pdfmetrics.registerFont(TTFont('Arial', regular_file))
+            pdfmetrics.registerFont(TTFont('Arial-Bold', bold_file))
+            
+            pdfmetrics.registerFontFamily('Arial', normal='Arial', bold='Arial-Bold')
+            
+            font = 'Arial'
+            font_bold = 'Arial-Bold'
+            break
+        except (TTFError, FileNotFoundError, OSError):
+            continue
+
     pdf = canvas.Canvas(os.path.join(directory, file_name))
     #pdf = canvas.Canvas(file_name)
     pdf.setTitle(document_title) 
     font_size = 11
-    font = 'Arial'
     pdf.setFont(font, font_size)
     width = pdf._pagesize[0]
     padding = 15 * mm
@@ -492,9 +507,9 @@ def generate_pdf_confirmation(order_id):
     lasty -= 3*interline
     pdf.drawRightString(210*mm-padding, lasty, f"Podkowa Leśna, dn. {reservation.Reservation.date.strftime('%d.%m.%Y')}r.")
     lasty -= interline
-    pdf.setFont('Arial-Bold', font_size)
+    pdf.setFont(font_bold, font_size)
     pdf.drawCentredString(290, lasty, "Zamówienie nr. " + str(reservation.Reservation.string_order_id))
-    pdf.setFont('Arial', font_size)
+    pdf.setFont(font, font_size)
     lasty -= binterline
 
 
@@ -707,16 +722,7 @@ def slownie(liczba:int, skala:str='długa', jeden:bool=True):
 	return ' '.join(s for s in słowa if s)
 
 
-def open_file_with(filepath: str | Path, force_chooser: bool = False) -> None:
-    
-    if not os.path.exists(file_path): 
-        file_path = file_path.replace('Użytkownicy', 'Users', 1)
-        file_path = file_path.replace('Dokumenty', 'Documents', 1)
-
-    if not os.path.exists(file_path): 
-        file_path = file_path.replace('Users', 'Użytkownicy', 1)
-        file_path = file_path.replace('Documents', 'Dokumenty', 1)
-    
+def print_file(filepath: str | Path, force_chooser: bool = False) -> None:
     """Opens a file with the default application associated with its type, 
     or prompts the user to choose an application.
 
@@ -724,6 +730,15 @@ def open_file_with(filepath: str | Path, force_chooser: bool = False) -> None:
     :param force_chooser: If True, forces the display of the application chooser dialog.
                           If False, opens the file with the default application associated with its type.
     """
+    
+    if not os.path.exists(filepath): 
+        filepath = filepath.replace('Użytkownicy', 'Users', 1)
+        filepath = filepath.replace('Dokumenty', 'Documents', 1)
+
+    if not os.path.exists(filepath): 
+        filepath = filepath.replace('Users', 'Użytkownicy', 1)
+        filepath = filepath.replace('Documents', 'Dokumenty', 1)
+    
     path = Path(filepath).resolve()
     if not path.exists():
         raise FileNotFoundError(f"Plik nie istnieje: {path}")

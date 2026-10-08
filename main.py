@@ -56,7 +56,7 @@ if __name__ == '__main__':
     # 4. Ładujemy widoki
     app = main_window(root)
     
-    # 5. PODPINAMY ODŚWIEŻANIE DO KONTROLERÓW! <--- DODAJ TĘ LINIJKĘ
+    # 5. Podpinamy odświeżanie po commitach do kontrolerów
     controllers.refresh_callback = lambda: refresh_after_commit(app)
     
     # 6. Uruchamiamy Smart Polling

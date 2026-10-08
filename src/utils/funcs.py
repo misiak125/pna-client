@@ -171,8 +171,8 @@ reservation_search, show_finalized, all_products_tree, show_sold, show_reserved,
             delivery = product.expected_deliveryy.strftime('%d.%m.%Y')
         if compare_list_to_element(free_products_search.split(), [product.Product.brand, product.Product.model,
             product.Product.year, product.Product.colour, product.max, delivery]) and \
-            (show_year_free == "wszystkie" or product.Product.year == int(show_year_free)):
-            free_products_tree.insert("", "end", values=(product.Product.brand, product.Product.model,
+            (show_year_free == "wszystkie" or product.Product.year == int(show_year_free)):            
+            free_products_tree.insert("", "end", values=(product.Product.first_id, product.Product.brand, product.Product.model,
             product.Product.year, product.Product.colour, product.count, delivery, short_price(product.max)), tags=(tag,))
             i+=1
 

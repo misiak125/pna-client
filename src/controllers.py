@@ -100,6 +100,7 @@ def get_free_products_split():
         row.Product.model = d['model']
         row.Product.year = d['year']
         row.Product.colour = d['colour']
+        row.Product.first_id = d['first_free_id']
         
         row.max = d['price']
         row.count = d['count']

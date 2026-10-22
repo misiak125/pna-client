@@ -79,7 +79,7 @@ class main_window:
         show_year_dropdown = OptionMenu(filters_frame, self.show_year_free, *year_options)
         show_year_dropdown.grid(padx=10, pady=(10, 0), row = 0, column = 1)
 
-        self.free_products_tree = ttk.Treeview(tab, columns=("brand", "model", "year", "colour", 
+        self.free_products_tree = ttk.Treeview(tab, columns=("first_id", "brand", "model", "year", "colour", 
         "free_count", "date", "price"), show="headings")
         self.free_products_tree.heading("brand", text="Marka")
         self.free_products_tree.heading("model", text="Model")
@@ -96,7 +96,9 @@ class main_window:
         self.free_products_tree.column("free_count", width=30)
         self.free_products_tree.column("date", width=80)
         self.free_products_tree.column("price", width=60)
-
+        
+        self.free_products_tree["displaycolumns"]=("brand", "model", "year", 
+        "colour", "free_count", "date", "price")
         self.free_products_tree.pack(fill="both", expand=True, padx=10, pady=10)
 
         self.free_products_tree.bind("<Double-1>", lambda x: self.create_reservation( 
@@ -118,6 +120,7 @@ class main_window:
         self.free_prod_search_entry.pack(padx=10, pady=(10, 20), fill="x")
         #self.free_prod_search_entry.bind("<KeyRelease>", lambda x: con.fake_commit())
         self.free_prod_search_entry.bind("<Return>", lambda x: con.fake_commit())
+        self.free_prod_search_entry.bind("<FocusOut>", lambda x: con.fake_commit())
 
 
 
@@ -209,6 +212,7 @@ class main_window:
         self.all_prod_search_entry.pack(padx=10, pady=(5, 15), fill="x")
         #self.all_prod_search_entry.bind("<KeyRelease>", lambda x: con.fake_commit())
         self.all_prod_search_entry.bind("<Return>", lambda x: con.fake_commit())
+        self.all_prod_search_entry.bind("<FocusOut>", lambda x: con.fake_commit())
 
 
     def create_customers_tab(self, tab):
@@ -253,6 +257,7 @@ class main_window:
         self.customers_search_entry.pack(padx=10, pady=20, fill="x")
         #self.customers_search_entry.bind("<KeyRelease>", lambda x: con.fake_commit())
         self.customers_search_entry.bind("<Return>", lambda x: con.fake_commit())
+        self.customers_search_entry.bind("<FocusOut>", lambda x: con.fake_commit())
 
 
     def create_new_customer(self, lasttop, callback = None, select = lambda: []):
@@ -383,6 +388,7 @@ class main_window:
         self.reservation_search_entry.pack(padx=10, pady=20, fill="x")
         #self.reservation_search_entry.bind("<KeyRelease>", lambda x: con.fake_commit())
         self.reservation_search_entry.bind("<Return>", lambda x: con.fake_commit())
+        self.reservation_search_entry.bind("<FocusOut>", lambda x: con.fake_commit())
 
 
     def show_reservation_details(self, res_id, lasttop):

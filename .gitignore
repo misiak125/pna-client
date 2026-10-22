@@ -188,3 +188,5 @@ src/static/acc_numbers.json
 src/static
 src/error_log.txt
 test.py
+
+*.DS_Store

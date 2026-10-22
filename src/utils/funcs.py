@@ -5,9 +5,10 @@ from datetime import datetime
 from math import trunc
 from reportlab.pdfgen import canvas 
 from reportlab.pdfbase import pdfmetrics 
-from reportlab.pdfbase.ttfonts import TTFont
+from reportlab.pdfbase.ttfonts import TTFError, TTFont
 from reportlab.lib.units import cm, mm
 from reportlab.lib.utils import simpleSplit
+from pathlib import Path
 import os
 import platform
 import subprocess
@@ -454,20 +455,38 @@ def generate_pdf_confirmation(order_id):
     file_name = re.sub(r'[^a-zA-Z0-9]', '', reservation.Customer.name.lower())
     file_num = 1
     while os.path.exists(os.path.join(directory, file_name+str(file_num)+'.pdf')): file_num+=1
-    file_name=file_name+str(file_num)+'.pdf'
+    if file_num != 1:
+        file_name = file_name+str(file_num)+'.pdf'
+    else:
+        file_name = file_name+'.pdf'
     header = Image.open(resource_path(os.path.normpath('static/header2.jpg')))
     #print(pdfmetrics.getRegisteredFontNames())
-    try:
-        pdfmetrics.registerFont(TTFont('Arial', 'arial.ttf')) 
-        pdfmetrics.registerFont(TTFont('Arial-Bold', 'arialbd.ttf'))
-    except:
-        pdfmetrics.registerFont(TTFont('Arial', 'Arial.ttf')) 
-        pdfmetrics.registerFont(TTFont('Arial-Bold', 'Arialbd.ttf'))
+    ARIAL_CANDIDATES = [
+        ('arial.ttf', 'arialbd.ttf'),
+        ('Arial.ttf', 'Arialbd.ttf'),
+        ('Arial.ttf', 'Arial Bold.ttf'),
+    ]
+
+    font = 'Helvetica'
+    font_bold = 'Helvetica-Bold'
+
+    for regular_file, bold_file in ARIAL_CANDIDATES:
+        try:
+            pdfmetrics.registerFont(TTFont('Arial', regular_file))
+            pdfmetrics.registerFont(TTFont('Arial-Bold', bold_file))
+            
+            pdfmetrics.registerFontFamily('Arial', normal='Arial', bold='Arial-Bold')
+            
+            font = 'Arial'
+            font_bold = 'Arial-Bold'
+            break
+        except (TTFError, FileNotFoundError, OSError):
+            continue
+
     pdf = canvas.Canvas(os.path.join(directory, file_name))
     #pdf = canvas.Canvas(file_name)
     pdf.setTitle(document_title) 
     font_size = 11
-    font = 'Arial'
     pdf.setFont(font, font_size)
     width = pdf._pagesize[0]
     padding = 15 * mm
@@ -488,9 +507,9 @@ def generate_pdf_confirmation(order_id):
     lasty -= 3*interline
     pdf.drawRightString(210*mm-padding, lasty, f"Podkowa Leśna, dn. {reservation.Reservation.date.strftime('%d.%m.%Y')}r.")
     lasty -= interline
-    pdf.setFont('Arial-Bold', font_size)
+    pdf.setFont(font_bold, font_size)
     pdf.drawCentredString(290, lasty, "Zamówienie nr. " + str(reservation.Reservation.string_order_id))
-    pdf.setFont('Arial', font_size)
+    pdf.setFont(font, font_size)
     lasty -= binterline
 
 
@@ -598,7 +617,7 @@ def generate_pdf_confirmation(order_id):
 
 
     
-    lines = simpleSplit(f"Termin realizacji zamówienia: {reservation.Reservation.term}", font, font_size, max_width)
+    lines = simpleSplit(f"Przewidywany termin realizacji zamówienia: {reservation.Reservation.term}", font, font_size, max_width)
     for line in lines:
         pdf.drawString(padding, lasty, line)
         lasty-=interline
@@ -683,10 +702,10 @@ def slownie(liczba:int, skala:str='długa', jeden:bool=True):
 			continue
 		
 		if d == 1 and j > 0: #łączymy dziesiątki i jedności w -naście
-			 n = j
-			 d = j = 0
+			n = j
+			d = j = 0
 		else:
-			 n = 0
+			n = 0
 		
 		#wybór formy gramatycznej
 		if j == 1 and s + d + n == 0:
@@ -703,32 +722,67 @@ def slownie(liczba:int, skala:str='długa', jeden:bool=True):
 	return ' '.join(s for s in słowa if s)
 
 
-def print_file(file_path):
-    
-    if not os.path.exists(file_path): 
-        file_path = file_path.replace('Użytkownicy', 'Users', 1)
-        file_path = file_path.replace('Dokumenty', 'Documents', 1)
+def print_file(filepath: str | Path, force_chooser: bool = False) -> None:
+    """Opens a file with the default application associated with its type, 
+    or prompts the user to choose an application.
 
-    if not os.path.exists(file_path): 
-        file_path = file_path.replace('Users', 'Użytkownicy', 1)
-        file_path = file_path.replace('Documents', 'Dokumenty', 1)
+    :param filepath: Path to file.
+    :param force_chooser: If True, forces the display of the application chooser dialog.
+                          If False, opens the file with the default application associated with its type.
+    """
     
-    system_name = platform.system()
+    if not os.path.exists(filepath): 
+        filepath = filepath.replace('Użytkownicy', 'Users', 1)
+        filepath = filepath.replace('Dokumenty', 'Documents', 1)
 
-    if system_name == "Windows":
-        acrobat_paths = [
-            r"C:\Program Files\Adobe\Acrobat DC\Acrobat\Acrobat.exe",
-            r"C:\Program Files (x86)\Adobe\Acrobat Reader DC\Reader\AcroRd32.exe"
-        ]
-        
-        for acrobat_path in acrobat_paths:
-            if os.path.exists(acrobat_path):
-                subprocess.run([acrobat_path, file_path])
-                break
-    elif system_name == "Linux":    
-        subprocess.run(["xdg-open", file_path])
+    if not os.path.exists(filepath): 
+        filepath = filepath.replace('Users', 'Użytkownicy', 1)
+        filepath = filepath.replace('Documents', 'Dokumenty', 1)
+    
+    path = Path(filepath).resolve()
+    if not path.exists():
+        raise FileNotFoundError(f"Plik nie istnieje: {path}")
+
+    current_os = platform.system()
+
+    if current_os == "Windows":
+        if force_chooser:
+            subprocess.run(
+                ["rundll32.exe", "shell32.dll,OpenAs_RunDLL", str(path)],
+                check=True,
+            )
+        else:
+            os.startfile(str(path))
+
+    elif current_os == "Darwin":  # macOS
+        if force_chooser:
+            apple_script = (
+                f'set theFile to POSIX file "{path}" as alias\n'
+                f'tell application "Finder"\n'
+                f"    activate\n"
+                f"    open theFile using (choose application with prompt \"Wybierz program do otwarcia:\")\n"
+                f"end tell"
+            )
+            subprocess.run(["osascript", "-e", apple_script], check=True)
+        else:
+            subprocess.run(["open", str(path)], check=True)
+
+    elif current_os == "Linux":
+        if force_chooser:
+            try:
+                subprocess.run(
+                    ["gtk-launch", "--help"],
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL,
+                )
+                subprocess.run(["gio", "open", str(path)], check=True)
+            except (subprocess.SubprocessError, FileNotFoundError):
+                subprocess.run(["xdg-open", str(path)], check=True)
+        else:
+            subprocess.run(["xdg-open", str(path)], check=True)
+
     else:
-        print("Unsupported OS")
+        raise OSError(f"Nieobsługiwany system operacyjny: {current_os}")
     
 
 def change_dates(id_list, new_date):

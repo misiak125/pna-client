@@ -9,6 +9,7 @@ import tkcalendar as cal
 import babel.numbers
 
 def on_customer_click(lasttop):
+    """Displays congratulatory easter egg animation."""
     top = Toplevel(lasttop)
     frame_counter = 0
     top.title("GRATULACJE!")
@@ -29,17 +30,16 @@ def on_customer_click(lasttop):
 
 
 def sum_up_product(product_brand, product_model, product_colour, product_price, product_year, product_order_id, quantity, expected_delivery_str, expected_delivery):
-        #print(f"!{expected_delivery_str}!")
-        if expected_delivery_str == "" or expected_delivery_str == None:
-            #print("here")
-            expected_delivery = None
-        if not product_price:
-            product_price = 0.0
+    """Validates form fields and creates new product records."""
+    if expected_delivery_str == "" or expected_delivery_str == None:
+        expected_delivery = None
+    if not product_price:
+        product_price = 0.0
 
-        try:
-            product_price = product_price.replace(',', '.', 1)
-        except:
-            pass
+    try:
+        product_price = product_price.replace(',', '.', 1)
+    except:
+        pass
 
         if not product_brand or not product_model or not product_colour or not quantity or not product_year:
             messagebox.showerror("Error", "Wypełnij pole Marka, Model, Rocznik, Kolor oraz Ilość")
@@ -271,16 +271,16 @@ def delete_brand(brand, brand_cbox, new_brand_cbox):
     brand = brand.strip()
     if brand == "":
         return
-    models = con.get_brands_models(brand) #SERVER
-    if models is not None and len(models)>0:
-        if not ensure_delete_models(): return
+    models = con.get_brands_models(brand)
+    if models is not None and len(models) > 0:
+        if not ensure_delete_models():
+            return
     try:
-        con.drop_brands_models(models, brand)
         con.drop_brand(brand)
         new_brand_cbox["values"] = brand_cbox["values"] = con.get_brands_list()
         messagebox.showinfo("Sukces", "Pomyślnie usunięto markę")
     except Exception as e:
-        messagebox.showerror("Error", f"Nie udało się usunąć marki {e}")
+        messagebox.showerror("Error", f"Nie udało się usunąć marki: {e}")
 
 
 def delete_colour(colour, colour_cbox):
@@ -418,9 +418,7 @@ def confirm_edit_reservation(reservation, price_entry, advance_entry, form_entry
 
 
 def sum_up_edit_product(product_id, product_brand, product_model, product_colour, product_price, product_year, product_order_id, product_state, expected_delivery_str, expected_delivery, lasttop):
-    #print(f"!{expected_delivery_str}!")
     if expected_delivery_str == "" or expected_delivery_str == None:
-        #print("here")
         expected_delivery = None
     if not product_price:
         product_price = 0.0

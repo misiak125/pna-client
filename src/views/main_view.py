@@ -512,10 +512,6 @@ class main_window:
         top = Toplevel(lasttop)
         top.title("Utwórz rezerwację")
         top.minsize(950, 700)
-        try:
-            top.state('zoomed')
-        except Exception:
-            top.geometry("1100x750")
 
         top.grid_rowconfigure(0, weight=0)
         top.grid_rowconfigure(1, weight=0)

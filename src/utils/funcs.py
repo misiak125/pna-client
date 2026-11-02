@@ -145,16 +145,89 @@ def confirm_reservation(to_reservation, reservation_customer_id, reservation_adv
         cancel_button = Button(frame1, text="Anuluj", command=top.destroy)
         cancel_button.pack(side="left", padx=10) 
         new_id = con.get_new_order_id()
-        confirm_button = Button(frame1, text="Potwierdź", command = lambda: [con.make_reservation(reservation_customer_id, new_string_id,
-            to_reservation.id, reservation_advance, adnotation, adnotation_pub, bool_form, reservation_paid, term,
-            delivery, payment_method), 
-            con.change_price(to_reservation.id, new_price), top.destroy() ,generate_pdf_confirmation(new_id)]) #SERVER zmiana ceny niech sie dzieje na serwerze dodaj happy informacje ze sie udalo, zamknij tez poprzednie okno
+        confirm_button = Button(frame1, text="Potwierdź", command = lambda: [
+                con.make_reservation(
+                customer_id=reservation_customer_id,
+                string_id=new_string_id,
+                product_id=to_reservation.id,
+                advance=reservation_advance,
+                adnotation=adnotation,
+                adnotation_pub=adnotation_pub,
+                form=bool_form,
+                paid=reservation_paid,
+                term=term,
+                delivery=delivery,
+                payment_method=payment_method,
+                price=new_price
+            ),
+            top.destroy(),
+            messagebox.showinfo("Sukces", "Rezerwacja została pomyślnie utworzona."),
+            generate_pdf_confirmation(new_id)
+        ])
         confirm_button.pack(side="right", padx=10)
+
+
+def _get_tree_selection_id(tree):
+    try:
+        sel = tree.selection()
+        if sel:
+            vals = tree.item(sel[0], "values")
+            return vals[0] if vals else None
+    except Exception:
+        pass
+    return None
+
+def _get_free_products_selection_key(tree):
+    try:
+        sel = tree.selection()
+        if sel:
+            vals = tree.item(sel[0], "values")
+            if len(vals) >= 7:
+                return (str(vals[1]), str(vals[2]), str(vals[3]), str(vals[4]), str(vals[6]))
+    except Exception:
+        pass
+    return None
+
+def _restore_tree_selection_by_id(tree, target_id):
+    if target_id is None:
+        return
+    target_str = str(target_id)
+    for item in tree.get_children():
+        try:
+            vals = tree.item(item, "values")
+            if vals and str(vals[0]) == target_str:
+                tree.selection_set(item)
+                tree.focus(item)
+                tree.see(item)
+                break
+        except Exception:
+            continue
+
+def _restore_free_products_selection(tree, target_key):
+    if not target_key:
+        return
+    for item in tree.get_children():
+        try:
+            vals = tree.item(item, "values")
+            if len(vals) >= 7:
+                row_key = (str(vals[1]), str(vals[2]), str(vals[3]), str(vals[4]), str(vals[6]))
+                if row_key == target_key:
+                    tree.selection_set(item)
+                    tree.focus(item)
+                    tree.see(item)
+                    break
+        except Exception:
+            continue
 
 
 def refresh_table(free_products_tree, free_products_search, split_dates, customers_tree, customer_search, reservations_tree, 
 reservation_search, show_finalized, all_products_tree, show_sold, show_reserved, all_prod_search, show_year_all, show_year_free):
-    #print("refreshing")
+    # Store currently selected items before clearing the tree views
+    prev_free = _get_free_products_selection_key(free_products_tree)
+    prev_customer = _get_tree_selection_id(customers_tree)
+    prev_reservation = _get_tree_selection_id(reservations_tree)
+    prev_product = _get_tree_selection_id(all_products_tree)
+
     for item in free_products_tree.get_children():
         free_products_tree.delete(item)
 
@@ -274,6 +347,12 @@ reservation_search, show_finalized, all_products_tree, show_sold, show_reserved,
 
     all_products_tree.tag_configure('odd', background='#BEBEBE')
     
+    # Restore previous selections after tree views reload (if the item still exists)
+    _restore_free_products_selection(free_products_tree, prev_free)
+    _restore_tree_selection_by_id(customers_tree, prev_customer)
+    _restore_tree_selection_by_id(reservations_tree, prev_reservation)
+    _restore_tree_selection_by_id(all_products_tree, prev_product)
+    
    
 def get_selected_element_id(tree):
     if len(tree.selection()) != 1:
@@ -299,47 +378,70 @@ def refresh_res_customer(tree):
         tree.delete(item)
 
     customers = con.get_all_customers()
+    tree._customers_cache = customers
 
     item = None
 
     for i, customer in enumerate(customers):
-        if i==0:
-            item = tree.insert("", "end", values=(customer.id, 
+        inserted = tree.insert("", "end", values=(customer.id, 
             customer.name, customer.phone, customer.email))
-        else:
-            tree.insert("", "end", values=(customer.id, 
-            customer.name, customer.phone, customer.email))
+        if i == 0:
+            item = inserted
     
     return item
 
 
+def filter_tree_cached(entry, tree):
+    """
+    Optymalizacja SERVER: Błyskawiczne filtrowanie klientów w pamięci bez wysyłania
+    zapytań HTTP na każde naciśnięcie klawisza!
+    """
+    search_text = entry.get().strip().lower()
+    customers = getattr(tree, "_customers_cache", None)
+    if customers is None:
+        customers = con.get_all_customers()
+        tree._customers_cache = customers
+
+    for item in tree.get_children():
+        tree.delete(item)
+        
+    for customer in customers:
+        c_name = (customer.name or "").lower()
+        c_phone = (customer.phone or "").lower()
+        c_email = (customer.email or "").lower()
+        if search_text in c_name or search_text in c_phone or search_text in c_email:
+            tree.insert("", "end", values=(customer.id, customer.name, customer.phone, customer.email))
+
+
 def filter_tree(entry, db_result, tree, match, event=None):
-    #print(entry, db_result, tree, match)
     search_text = entry.get().strip().lower()
     for item in tree.get_children():
         tree.delete(item)
         
     for customer in db_result:
-        if search_text in customer.name.lower() or search_text in customer.phone.lower() or search_text in customer.email.lower():
+        if search_text in (customer.name or "").lower() or search_text in (customer.phone or "").lower() or search_text in (customer.email or "").lower():
             tree.insert("", "end", values=(customer.id, customer.name, customer.phone, customer.email))
 
 
 def get_product_specs_id(tree):
-    if len(tree.selection()) > 1 :
+    sel = tree.selection()
+    if not sel or len(sel) > 1:
         return -1
 
     try:
-        brand = tree.item(tree.focus(), "values")[0]
-        model = tree.item(tree.focus(), "values")[1]
-        year = tree.item(tree.focus(), "values")[2]
-        colour = tree.item(tree.focus(), "values")[3]
-        delivery = tree.item(tree.focus(), "values")[5]
+        vals = tree.item(tree.focus(), "values")
+        if vals and len(vals) > 0 and str(vals[0]).isdigit():
+            return int(vals[0])
 
-    except:
+        brand = vals[1]
+        model = vals[2]
+        year = vals[3]
+        colour = vals[4]
+        delivery = vals[6]
+        res = con.get_first_free_element(brand, model, colour, year, delivery)
+        return res.id if res else -1
+    except Exception:
         return -1
-
-    
-    return con.get_first_free_element(brand, model, colour, year, delivery).id  #SERVER
     
 
 def fill_models(models_cbox, brand):
@@ -352,14 +454,11 @@ def compare_list_to_element(search_list, element) -> bool:
         ok = 0
         search = str(search)
         search=search.strip()
-        #print("s ", search)
         for val in element:
             val = str(val)
             val=val.strip()
-            #print("v ", val)
             if search.lower() in val.lower(): 
                 ok=1
-                #print("OK", search, val)
         if ok == 0: return 0
     return 1
 
@@ -452,7 +551,7 @@ def generate_pdf_confirmation(order_id):
     directory = os.path.join(directory, "potwierdzenia_rez")
     if not os.path.isdir(directory):
         os.mkdir(directory)
-    file_name = re.sub(r'[^a-zA-Z0-9]', '', reservation.Customer.name.lower())
+    file_name = to_safe_filename(reservation.Customer.name)
     file_num = 1
     while os.path.exists(os.path.join(directory, file_name+str(file_num)+'.pdf')): file_num+=1
     if file_num != 1:
@@ -650,13 +749,38 @@ def generate_pdf_confirmation(order_id):
     print_file(os.path.join(directory, file_name))
 
 
+def to_safe_filename(text: str) -> str:
+    """
+    Zamienia polskie znaki diakrytyczne na odpowiedniki z alfabetu łacińskiego,
+    usuwa znaki niedozwolone w nazwach plików i formatuje tekst.
+    """
+    polish_map = {
+        'ą': 'a', 'ć': 'c', 'ę': 'e', 'ł': 'l', 'ń': 'n',
+        'ó': 'o', 'ś': 's', 'ź': 'z', 'ż': 'z',
+        'Ą': 'A', 'Ć': 'C', 'Ę': 'E', 'Ł': 'L', 'Ń': 'N',
+        'Ó': 'O', 'Ś': 'S', 'Ź': 'Z', 'Ż': 'Z'
+    }
+
+    text = text.lower()
+    
+    # Replace national characters using translation mapping
+    trans_table = str.maketrans(polish_map)
+    clean_text = text.translate(trans_table)
+    
+    # Replace whitespace sequences with underscore
+    clean_text = re.sub(r'\s+', '_', clean_text.strip())
+    
+    # Remove characters not permitted in filenames, preserving alphanumerics, underscores, and dashes
+    clean_text = re.sub(r'[^a-zA-Z0-9_\-]', '', clean_text)
+    
+    return clean_text
+
+
 def slownie(liczba:int, skala:str='długa', jeden:bool=True):
-    # Zamiana liczby na slowa z polska gramatyka
-    # source: www.algorytm.org
+    # Converts numbers to Polish words with proper grammatical forms (source: www.algorytm.org)
 	'''
-	Zamienia liczbę na zapis słowny w języku polskim.
-	Obsługuje liczby w zakresie do 10^66-1 dla długiej skali oraz 10^36-1 dla krótkiej skali.
-	Możliwe pominięcie słowa "jeden" przy potęgach tysiąca.
+	Converts integer number into Polish words.
+	Supports numbers up to 10^66-1 for long scale and 10^36-1 for short scale.
 	'''
 	if (skala == 'długa' and abs(liczba) >= 10**66) or (skala == 'krótka' and abs(liczba) >= 10**36):
 		raise ValueError('Zbyt duża liczba.')
@@ -668,8 +792,8 @@ def slownie(liczba:int, skala:str='długa', jeden:bool=True):
 	setki      = ('', 'sto',        'dwieście',    'trzysta',     'czterysta',    'pięćset',      'sześćset',      'siedemset',      'osiemset',      'dziewięćset')
 	
 
-	
-	grupy = [ #kolejne potęgi tysiąca, z formami gramatycznymi
+	# Thousands powers with Polish grammatical inflections
+	grupy = [
 		('', '', ''),
 		('tysiąc', 'tysiące', 'tysięcy'),
 	]
@@ -691,23 +815,23 @@ def slownie(liczba:int, skala:str='długa', jeden:bool=True):
 	
 	g = 0
 	while liczba != 0:
-		#Liczba jest dzielona na kolejne potęgi tysiąca, od największej.
+		# Process chunks of 1000 from highest power down
 		s = liczba % 1_000 // 100
 		d = liczba % 100 // 10
 		j = liczba % 10
 		liczba //= 1_000
 		
-		if s == d == j == 0: #brak elementów do nazwania
+		if s == d == j == 0:
 			g += 1
 			continue
 		
-		if d == 1 and j > 0: #łączymy dziesiątki i jedności w -naście
+		if d == 1 and j > 0:
 			n = j
 			d = j = 0
 		else:
 			n = 0
 		
-		#wybór formy gramatycznej
+		# Select grammatical inflection form
 		if j == 1 and s + d + n == 0:
 			forma = 0
 		elif 2 <= j <= 4:
@@ -786,8 +910,7 @@ def print_file(filepath: str | Path, force_chooser: bool = False) -> None:
     
 
 def change_dates(id_list, new_date):
-    for idd in id_list:
-        con.change_date(idd, new_date) #SERVER
+    con.batch_change_dates(id_list, new_date)
 
 
 def create_colored_icon(color, size=(25,25)):

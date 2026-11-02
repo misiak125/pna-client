@@ -1,6 +1,8 @@
 from tkinter import ttk, messagebox, Toplevel, Label, Button, IntVar, Checkbutton, Text, WORD, StringVar, OptionMenu, END, BooleanVar, Frame
+import sys
 import tkcalendar as cal
 import babel.numbers
+import src
 import src.controllers as con
 import src.utils.funcs as fun
 import src.utils.buttons as but
@@ -23,6 +25,19 @@ class main_window:
         ico = Image.open(resource_path(os.path.join('static', 'icon.png')))
         photo = ImageTk.PhotoImage(ico)
         root.wm_iconphoto(False, photo)
+
+        # Production environment warning banner (displayed only in unfrozen development mode)
+        if src.CURRENT_ENV_MODE == "PROD" and not getattr(sys, 'frozen', False):
+            prod_banner = Frame(self.root, bg="#B71C1C", pady=6)
+            prod_banner.pack(side="top", fill="x")
+            prod_text = Label(
+                prod_banner,
+                text="⚠️  ŚRODOWISKO PRODUKCYJNE (PROD) — Połączono z produkcyjną bazą danych! Wszelkie zmiany są trwałe!  ⚠️",
+                bg="#B71C1C",
+                fg="#FFFFFF",
+                font=("Default", 11, "bold")
+            )
+            prod_text.pack()
 		
         notebook = ttk.Notebook(self.root)
 
@@ -47,15 +62,11 @@ class main_window:
         self.create_add_product_tab(tab4)
         self.create_add_option_tab(tab6)
 
-        
         fun.refresh_table(self.free_products_tree, self.free_prod_search_entry.get(), self.split_dates.get(), 
         self.customers_tree, self.customers_search_entry.get(), self.reservations_tree, self.reservation_search_entry.get(),
         self.show_finalized, self.all_products_tree, self.show_sold, self.show_reserved.get(), self.all_prod_search_entry.get(), 
         self.show_year.get(), self.show_year_free.get())
-        ''''''
-
         
-
         notebook.pack(padx=10, pady=10, fill="both", expand=True)
         
 
@@ -107,10 +118,7 @@ class main_window:
         create_reservation_button = Button(tab, text="Zarezerwuj", command=lambda: self.create_reservation( 
         fun.get_product_specs_id(self.free_products_tree), "NIE", self.root))
         create_reservation_button.pack(padx=10, pady=(0, 10), side="right")
-        '''
-        change_date_button = Button(tab, text="Zmień datę", command=lambda: but.change_group_date_by_spec(self.free_products_tree, self.root))
-        change_date_button.pack(padx=10, pady=(0, 10), side="right")
-        '''
+        
 
         search_button = Button(tab, text="Szukaj", command=lambda: con.fake_commit());
         search_button.pack(padx=10, pady=(0, 10), side="right")
@@ -490,153 +498,181 @@ class main_window:
     def create_reservation(self, to_reservation_id, is_reserved, lasttop):
         if is_reserved == "TAK":
             messagebox.showerror("Error", "Ten pojazd jest już zarezerwowany")
-        else:
-            if to_reservation_id == -1:
-                messagebox.showerror("Error", "Wybierz produkt")
-                return
+            return
+        
+        if to_reservation_id == -1:
+            messagebox.showerror("Error", "Wybierz produkt")
+            return
 
-            to_reservation = con.get_product(to_reservation_id)
+        to_reservation = con.get_product(to_reservation_id)
+        if not to_reservation:
+            messagebox.showerror("Błąd", "Nie udało się pobrać danych wybranego pojazdu.")
+            return
 
-            top = Toplevel(lasttop)
-            top.title("Utwórz rezerwację")
+        top = Toplevel(lasttop)
+        top.title("Utwórz rezerwację")
+        top.minsize(950, 700)
+        try:
+            top.state('zoomed')
+        except Exception:
+            top.geometry("1100x750")
 
-            top.grid_rowconfigure(0, weight=0)
-            top.grid_rowconfigure(1, weight=1)
-            top.grid_rowconfigure(2, weight=0)
-            top.grid_rowconfigure(3, weight=1)
-            top.grid_rowconfigure(4, weight=0)
-            top.grid_columnconfigure(0, weight=1)
-            top.grid_columnconfigure(1, weight=1)
+        top.grid_rowconfigure(0, weight=0)
+        top.grid_rowconfigure(1, weight=0)
+        top.grid_rowconfigure(2, weight=0)
+        top.grid_rowconfigure(3, weight=1)
+        top.grid_rowconfigure(4, weight=0)
+        top.grid_columnconfigure(0, weight=1)
+        top.grid_columnconfigure(1, weight=1)
 
-            tytul_rezerwacji = Label(top, text=f"Zarezerwuj {to_reservation.brand} {to_reservation.model} "\
-                f"{to_reservation.year} {to_reservation.colour}", font=("Default", 14))
-            tytul_rezerwacji.grid(row=0, column=0, columnspan=2, pady=(10, 0), sticky="nsew") 
+        tytul_rezerwacji = Label(top, text=f"Zarezerwuj {to_reservation.brand} {to_reservation.model} "\
+            f"{to_reservation.year} {to_reservation.colour}", font=("Default", 14))
+        tytul_rezerwacji.grid(row=0, column=0, columnspan=2, pady=(10, 0), sticky="nsew") 
 
-            customer_frame = ttk.Frame(top)
-            customer_frame.grid(row=1, columnspan=2, column=0, padx=10, pady=10, sticky="nsew")
-            customer_frame.grid_rowconfigure(0, weight=1)
-            customer_frame.grid_columnconfigure(0, weight=1)
+        customer_frame = ttk.Frame(top)
+        customer_frame.grid(row=1, columnspan=2, column=0, padx=10, pady=10, sticky="nsew")
+        customer_frame.grid_rowconfigure(0, weight=1)
+        customer_frame.grid_columnconfigure(0, weight=1)
 
-            res_customers_tree = ttk.Treeview(customer_frame, columns=("id", "name", "phone", "email"), show="headings")
-            res_customers_tree["displaycolumns"]=("name", "phone", "email")
-            res_customers_tree.heading("id")
-            res_customers_tree.heading("name", text="Imię i Nazwisko")
-            res_customers_tree.heading("phone", text="Nr.Tel.")
-            res_customers_tree.heading("email", text="Email")
+        res_customers_tree = ttk.Treeview(customer_frame, columns=("id", "name", "phone", "email"), show="headings", height=6)
+        res_customers_tree["displaycolumns"] = ("name", "phone", "email")
+        res_customers_tree.heading("id")
+        res_customers_tree.heading("name", text="Imię i Nazwisko")
+        res_customers_tree.heading("phone", text="Nr.Tel.")
+        res_customers_tree.heading("email", text="Email")
 
-            res_customers_tree.grid(row=0, column=0, sticky="nsew", padx=0, pady=0) #row1??? columnspan=2, 
+        scrollbar_cust = ttk.Scrollbar(customer_frame, orient="vertical", command=res_customers_tree.yview)
+        res_customers_tree.configure(yscrollcommand=scrollbar_cust.set)
+        res_customers_tree.grid(row=0, column=0, sticky="nsew", padx=0, pady=0)
+        scrollbar_cust.grid(row=0, column=1, sticky="ns")
 
-            fun.refresh_res_customer(res_customers_tree)
+        fun.refresh_res_customer(res_customers_tree)
 
-            customer_addons_frame = ttk.Frame(top)
-            customer_addons_frame.grid(row=2, column=0, columnspan=2, sticky="nsew")
-            customer_addons_frame.grid_rowconfigure(0, weight=0)
-            customer_addons_frame.grid_columnconfigure(0, weight=0)
-            customer_addons_frame.grid_columnconfigure(1, weight=1)
-            customer_addons_frame.grid_columnconfigure(2, weight=0)
+        customer_addons_frame = ttk.Frame(top)
+        customer_addons_frame.grid(row=2, column=0, columnspan=2, sticky="nsew")
+        customer_addons_frame.grid_rowconfigure(0, weight=0)
+        customer_addons_frame.grid_columnconfigure(0, weight=0)
+        customer_addons_frame.grid_columnconfigure(1, weight=1)
+        customer_addons_frame.grid_columnconfigure(2, weight=0)
 
+        search_label = Label(customer_addons_frame, text="Wyszukaj:", padx=10)
+        search_label.grid(row=0, column=0, sticky="w", pady=(0, 0))
+        search_entry = ttk.Entry(customer_addons_frame)
+        search_entry.grid(row=0, column=1, padx=10, pady=(0, 0), sticky="ew")
+        # In-memory cached search filter to avoid redundant HTTP requests
+        search_entry.bind("<KeyRelease>", lambda x: fun.filter_tree_cached(search_entry, res_customers_tree))
 
-            search_label = Label(customer_addons_frame, text="Wyszukaj:", padx=10)
-            search_label.grid(row=0, column=0, sticky="w", pady=(0, 0))
-            search_entry = ttk.Entry(customer_addons_frame)
-            search_entry.grid(row=0, column=1, padx=10, pady=(0, 0), sticky="ew")
-            search_entry.bind("<KeyRelease>", lambda x: fun.filter_tree(search_entry, con.get_all_customers(), res_customers_tree, "name")) #SERVER albo inna optymalizacja
-
-            new_customer_button = Button(customer_addons_frame, text="Nowy klient", 
+        new_customer_button = Button(customer_addons_frame, text="Nowy klient", 
             command=lambda: self.create_new_customer(top, None, 
             lambda: [search_entry.delete(0, END), res_customers_tree.selection_set(fun.refresh_res_customer(res_customers_tree))]))
-            new_customer_button.grid(row=0, column=2, padx=10, pady=(0, 0), sticky="e")
+        new_customer_button.grid(row=0, column=2, padx=10, pady=(0, 0), sticky="e")
 
-            reservation_frame = ttk.Frame(top)
-            reservation_frame.grid(row=3, columnspan=2, column=0, padx=10, pady=0, sticky="nsew")
-            reservation_frame.grid_rowconfigure(0, weight=0)
-            reservation_frame.grid_rowconfigure(1, weight=0)
-            reservation_frame.grid_rowconfigure(2, weight=0)
-            reservation_frame.grid_rowconfigure(3, weight=1)
-            reservation_frame.grid_rowconfigure(4, weight=1)
-            reservation_frame.grid_columnconfigure(0, weight=0)
-            reservation_frame.grid_columnconfigure(1, weight=1)
-            reservation_frame.grid_columnconfigure(2, weight=0)
-            reservation_frame.grid_columnconfigure(3, weight=1)
+        reservation_frame = ttk.Frame(top)
+        reservation_frame.grid(row=3, columnspan=2, column=0, padx=10, pady=0, sticky="nsew")
+        reservation_frame.grid_rowconfigure(0, weight=0)
+        reservation_frame.grid_rowconfigure(1, weight=0)
+        reservation_frame.grid_rowconfigure(2, weight=0)
+        reservation_frame.grid_rowconfigure(3, weight=1, minsize=55)
+        reservation_frame.grid_rowconfigure(4, weight=1, minsize=55)
+        reservation_frame.grid_columnconfigure(0, weight=0)
+        reservation_frame.grid_columnconfigure(1, weight=1)
+        reservation_frame.grid_columnconfigure(2, weight=0)
+        reservation_frame.grid_columnconfigure(3, weight=1)
 
-            reservation_advance_label = Label(reservation_frame, text = "Wartość zaliczki:")
-            reservation_advance_entry = ttk.Entry(reservation_frame)
+        reservation_advance_label = Label(reservation_frame, text = "Wartość zaliczki:")
+        reservation_advance_entry = ttk.Entry(reservation_frame)
 
-            reservation_advance_label.grid(row=0, column=0, padx=10, pady=10, sticky="w")
-            reservation_advance_entry.grid(row=0, column=1, padx=0, pady=10, sticky="ew")
+        reservation_advance_label.grid(row=0, column=0, padx=10, pady=10, sticky="w")
+        reservation_advance_entry.grid(row=0, column=1, padx=0, pady=10, sticky="ew")
 
-            new_price_label = Label(reservation_frame, text = "Ustalona cena:")
-            new_price_entry = ttk.Entry(reservation_frame)
+        new_price_label = Label(reservation_frame, text = "Ustalona cena:")
+        new_price_entry = ttk.Entry(reservation_frame)
 
-            new_price_label.grid(row=1, column=0, padx=10, pady=(0, 10), sticky="w")
-            new_price_entry.grid(row=1, column=1, padx=0, pady=(0, 10), sticky="ew")
-            new_price_entry.insert(0, fun.short_price(to_reservation.price))
+        new_price_label.grid(row=1, column=0, padx=10, pady=(0, 10), sticky="w")
+        new_price_entry.grid(row=1, column=1, padx=0, pady=(0, 10), sticky="ew")
+        new_price_entry.insert(0, fun.short_price(to_reservation.price))
 
-            reservation_form = StringVar()
-            reservation_form.set('zaliczka/zadatek')
-            form_box=OptionMenu(reservation_frame, reservation_form, *['zaliczka', 'zadatek'])
-            form_box.grid(row=0, column=2, padx=0, pady=10, columnspan=2)
+        reservation_form = StringVar()
+        reservation_form.set('zaliczka/zadatek')
+        form_box = OptionMenu(reservation_frame, reservation_form, *['zaliczka', 'zadatek'])
+        form_box.grid(row=0, column=2, padx=0, pady=10, columnspan=2)
 
-            payment_method = StringVar()
-            payment_method.set('płatność')
-            banks_json=json.load(open(resource_path("static/acc_numbers.json"), "r", encoding="utf-8"))
-            banks = ['gotówka', 'karta']+list(banks_json.keys())
-            payment_method_box=OptionMenu(reservation_frame, payment_method, *banks)
-            payment_method_box.grid(row=1, column=2, padx=0, pady=(0, 10), columnspan=2)
+        payment_method = StringVar()
+        payment_method.set('płatność')
+        banks = ['gotówka', 'karta']
+        try:
+            acc_path = resource_path(os.path.join("static", "acc_numbers.json"))
+            if os.path.exists(acc_path):
+                with open(acc_path, "r", encoding="utf-8") as f:
+                    banks_json = json.load(f)
+                    banks += list(banks_json.keys())
+        except Exception as bank_err:
+            src.logger.warning(f"Nie udało się załadować acc_numbers.json: {bank_err}")
 
-            checkbuttons_frame = ttk.Frame(reservation_frame)
-            checkbuttons_frame.grid(row=2, column=2, padx=0, pady=(0, 10), columnspan=2)
+        payment_method_box = OptionMenu(reservation_frame, payment_method, *banks)
+        payment_method_box.grid(row=1, column=2, padx=0, pady=(0, 10), columnspan=2)
 
-            reservation_paid = BooleanVar()
-            paid_button = Checkbutton(checkbuttons_frame, text="Zapłacono", variable=reservation_paid, offvalue=False, onvalue=True)
-            paid_button.grid(row=0, column=0, padx=10, pady=0, columnspan=1)
-            
-            delivery = BooleanVar()
-            delivery_button = Checkbutton(checkbuttons_frame, text="Dostawa", variable=delivery, offvalue=False, onvalue=True)
-            delivery_button.grid(row=0, column=1, padx=10, pady=0, columnspan=1)
-            
-            term_label = Label(reservation_frame, text = "Termin realizacji:")
-            term_entry = ttk.Entry(reservation_frame)
+        checkbuttons_frame = ttk.Frame(reservation_frame)
+        checkbuttons_frame.grid(row=2, column=2, padx=0, pady=(0, 10), columnspan=2, sticky="w")
 
-            term_label.grid(row=2, column=0, padx=10, pady=(0, 10), sticky="w")
-            term_entry.grid(row=2, column=1, padx=0, pady=(0, 10), columnspan=2, sticky="ew")
+        reservation_paid = BooleanVar()
+        paid_button = Checkbutton(checkbuttons_frame, text="Zapłacono", variable=reservation_paid, offvalue=False, onvalue=True)
+        paid_button.grid(row=0, column=0, padx=10, pady=0, columnspan=1)
+        
+        delivery = BooleanVar()
+        delivery_button = Checkbutton(checkbuttons_frame, text="Dostawa", variable=delivery, offvalue=False, onvalue=True)
+        delivery_button.grid(row=0, column=1, padx=10, pady=0, columnspan=1)
+        
+        term_label = Label(reservation_frame, text = "Termin realizacji:")
+        term_entry = ttk.Entry(reservation_frame)
 
-            POLISH_MONTHS = [
-                "Styczeń", "Luty", "Marzec", "Kwiecień",
-                "Maj", "Czerwiec", "Lipiec", "Sierpień",
-                "Wrzesień", "Październik", "Listopad", "Grudzień"
-            ]   
-            
-            if to_reservation.expected_delivery is not None:
-                if to_reservation.expected_delivery.day > 15: double_term = True
-                else: double_term = False
-                month_index = to_reservation.expected_delivery.month - 1
-                if double_term:
-                    next_month_date = to_reservation.expected_delivery + relativedelta(months=+1)
-                    next_month_index = next_month_date.month - 1
-                    term_entry.insert(0, f"{POLISH_MONTHS[month_index]} {to_reservation.expected_delivery.year}r. / {POLISH_MONTHS[next_month_index]} {next_month_date.year}r.")
-                else:
-                    term_entry.insert(0, f"{POLISH_MONTHS[month_index]} {to_reservation.expected_delivery.year}r.")
+        term_label.grid(row=2, column=0, padx=10, pady=(0, 10), sticky="w")
+        term_entry.grid(row=2, column=1, padx=0, pady=(0, 10), sticky="ew")
 
-            adnotation_label = Label(reservation_frame, text = "Uwagi:")
-            adnotation_entry = Text(reservation_frame, wrap=WORD, height=5)
+        POLISH_MONTHS = [
+            "Styczeń", "Luty", "Marzec", "Kwiecień",
+            "Maj", "Czerwiec", "Lipiec", "Sierpień",
+            "Wrzesień", "Październik", "Listopad", "Grudzień"
+        ]   
+        
+        try:
+            deliv = to_reservation.expected_delivery
+            if deliv:
+                if isinstance(deliv, str):
+                    try:
+                        deliv = datetime.strptime(deliv[:10], "%Y-%m-%d")
+                    except Exception:
+                        deliv = None
+                if deliv:
+                    m_idx = deliv.month - 1
+                    if deliv.day > 15:
+                        next_m_idx = deliv.month % 12
+                        next_y = deliv.year + (1 if deliv.month == 12 else 0)
+                        term_entry.insert(0, f"{POLISH_MONTHS[m_idx]} {deliv.year}r. / {POLISH_MONTHS[next_m_idx]} {next_y}r.")
+                    else:
+                        term_entry.insert(0, f"{POLISH_MONTHS[m_idx]} {deliv.year}r.")
+        except Exception as date_err:
+            src.logger.warning(f"Błąd obliczania terminu dostawy: {date_err}")
 
-            adnotation_label.grid(row=3, column=0, padx=10, pady=(0, 10), sticky="w")
-            adnotation_entry.grid(row=3, column=1, padx=0, pady=(0, 10), sticky="nsew", columnspan=3)
+        adnotation_label = Label(reservation_frame, text = "Uwagi:")
+        adnotation_entry = Text(reservation_frame, wrap=WORD, height=4)
 
-            adnotation_pub_label = Label(reservation_frame, text = "Uwagi dla klienta:")
-            adnotation_pub_entry = Text(reservation_frame, wrap=WORD, height=5)
+        adnotation_label.grid(row=3, column=0, padx=10, pady=(0, 10), sticky="w")
+        adnotation_entry.grid(row=3, column=1, padx=0, pady=(0, 10), sticky="nsew", columnspan=3)
 
-            adnotation_pub_label.grid(row=4, column=0, padx=10, pady=(0, 10), sticky="w")
-            adnotation_pub_entry.grid(row=4, column=1, padx=0, pady=(0, 10), sticky="nsew", columnspan=3)
-            
-            cancel_button = Button(top, text="Anuluj", command=lambda: top.destroy())
-            cancel_button.grid(row=4, column=0, padx=10, pady=(0, 10), sticky="w")
+        adnotation_pub_label = Label(reservation_frame, text = "Uwagi dla klienta:")
+        adnotation_pub_entry = Text(reservation_frame, wrap=WORD, height=4)
 
-            make_button = Button(top, text="Zarezerwuj", command=lambda: [fun.confirm_reservation(to_reservation, fun.get_selected_element_id(res_customers_tree), 
-                reservation_advance_entry.get().strip(), new_price_entry.get().strip(), adnotation_entry.get('1.0', 'end').strip(), adnotation_pub_entry.get('1.0', 'end').strip(),
-                reservation_form.get(), reservation_paid.get(), term_entry.get().strip(), delivery.get(), payment_method.get(), top)])
-            make_button.grid(row=4, column=1, padx=10, pady=(0, 10), sticky="e")
+        adnotation_pub_label.grid(row=4, column=0, padx=10, pady=(0, 10), sticky="w")
+        adnotation_pub_entry.grid(row=4, column=1, padx=0, pady=(0, 10), sticky="nsew", columnspan=3)
+        
+        cancel_button = Button(top, text="Anuluj", command=lambda: top.destroy())
+        cancel_button.grid(row=4, column=0, padx=10, pady=(0, 10), sticky="w")
+
+        make_button = Button(top, text="Zarezerwuj", command=lambda: [fun.confirm_reservation(to_reservation, fun.get_selected_element_id(res_customers_tree), 
+            reservation_advance_entry.get().strip(), new_price_entry.get().strip(), adnotation_entry.get('1.0', 'end').strip(), adnotation_pub_entry.get('1.0', 'end').strip(),
+            reservation_form.get(), reservation_paid.get(), term_entry.get().strip(), delivery.get(), payment_method.get(), top)])
+        make_button.grid(row=4, column=1, padx=10, pady=(0, 10), sticky="e")
             
     
     def create_add_product_tab(self, tab):
@@ -942,7 +978,6 @@ class main_window:
         product_expected_delivery_entry.delete(0, END)
 
         product = con.get_product(product_id)
-        #print(product.brand, product.model, product.colour, product.state)
         self.edit_product_brand_var.set(product.brand)
         self.edit_product_model_entry["values"] = con.get_models_list(product.brand)
         self.edit_product_model_var.set(product.model)

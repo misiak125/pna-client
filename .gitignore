@@ -190,3 +190,4 @@ src/error_log.txt
 test.py
 
 *.DS_Store
+logs/*

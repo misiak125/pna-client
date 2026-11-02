@@ -29,6 +29,7 @@ a = Analysis(
         'babel.dates',
         'dateutil.tz',
         'dateutil.parser',
+        'dateutil.relativedelta',
         'requests',
         'keyring',
         'keyring.backends.Windows'

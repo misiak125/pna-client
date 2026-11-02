@@ -12,7 +12,8 @@ a = Analysis(
     datas=[
         ('src/static/*', 'static'),
         ('src/static/splash.png', '.'),
-        ('icon.ico', '.')
+        ('icon.ico', '.'),
+        ('.env', '.')
     ] + tkinter_data + babel_data,
     hiddenimports=[
         'tkinter.ttk',

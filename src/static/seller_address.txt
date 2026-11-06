@@ -1,0 +1,1 @@
+/* Fill the adress of your company into pna-client/src/static/seller_address.txt */

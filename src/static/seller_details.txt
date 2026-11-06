@@ -1,0 +1,5 @@
+/* Fill details of 
+your company into 
+pna-client/src/static/seller_details.txt */
+
+

@@ -1,0 +1,4 @@
+{
+    "Example Bank":        "00 0000 0000 0000 0000 0000 0000",
+    "Fill available banks in pna-client/src/static/acc_numbers.json":  "00 0000 0000 0000 0000 0000 0000"
+}

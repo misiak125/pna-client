@@ -129,7 +129,21 @@ API_URL=https://your-production-server.com
 API_URL_DEV=http://127.0.0.1:5000
 ```
 
-### 3. Launching the Application
+### 3. Static Assets and Company Details Configuration
+The repository includes sample/placeholder assets in `src/static/` so the application runs out of the box without missing-file errors. Before issuing real contracts or generating PDF reservation confirmations in production, fill in your company details in the following files:
+- `src/static/seller_details.txt` - Company legal name, tax identifiers (NIP/VAT ID, REGON, KRS).
+- `src/static/seller_address.txt` - Physical address / vehicle pickup location printed on agreements.
+- `src/static/seller_contact.txt` - Dealership phone numbers, email addresses, and website.
+- `src/static/acc_numbers.json` - Bank account names and account numbers available for wire transfers.
+- `src/static/header2.jpg` - Letterhead image printed at the top of PDF documents.
+
+Tip for local development: To avoid accidentally committing your private company details or custom bank accounts, tell Git to ignore local changes to these tracked files:
+```bash
+git update-index --skip-worktree src/static/seller_details.txt src/static/seller_address.txt src/static/seller_contact.txt src/static/acc_numbers.json src/static/header2.jpg
+```
+(If you ever need to track changes to them again, run the same command with `--no-skip-worktree`.)
+
+### 4. Launching the Application
 Execute the client using the launcher script:
 ```bash
 python run.py

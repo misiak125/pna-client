@@ -138,7 +138,7 @@ python run.py
 
 ---
 
-## Step-by-Step Walkthrough for Local Development Environment Setup
+## Step-by-Step Walkthrough for Local Development Environment Setup (also useful as a demo)
 
 1. Ensure `pna-api` and `pna-client` are cloned next to each other in the same directory, and virtual environments with `.env` files are ready for both repositories.
 2. Launch the client: `python run.py`.

@@ -1,0 +1,4 @@
+/* Fill contact info 
+of your company into 
+pna-client/src/static/seller_contact.txt 
+------------*/

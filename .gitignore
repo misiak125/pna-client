@@ -183,7 +183,7 @@ todo
 #plik z informacją o sprzedawcy drukowaną na potwierdzeniu
 src/static/seller_details.txt
 src/static/seller_contact.txt
-src/static/seller_adress.txt
+src/static/seller_address.txt
 src/static/acc_numbers.json
 src/static
 src/error_log.txt

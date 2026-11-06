@@ -162,15 +162,24 @@ def setup_exception_handlers(root):
 def find_dev_paths():
     """
     Locates docker-compose.yml and API directory relative to client or workspace root.
+    Supports standard sibling directories like 'pna-api' and 'api'.
     """
     base_dir = os.path.dirname(os.path.abspath(__file__))
-    candidates = [
-        (os.path.join(base_dir, "..", "api", "docker-compose.yml"), os.path.join(base_dir, "..", "api")),
-        (os.path.join(os.getcwd(), "api", "docker-compose.yml"), os.path.join(os.getcwd(), "api")),
+    parent_dir = os.path.abspath(os.path.join(base_dir, ".."))
+    cwd = os.getcwd()
+
+    candidate_dirs = [
+        os.path.join(parent_dir, "pna-api"),
+        os.path.join(parent_dir, "api"),
+        os.path.join(cwd, "pna-api"),
+        os.path.join(cwd, "api"),
     ]
-    for comp_path, api_dir in candidates:
-        if os.path.exists(comp_path):
+
+    for api_dir in candidate_dirs:
+        comp_path = os.path.join(api_dir, "docker-compose.yml")
+        if os.path.isfile(comp_path) and os.path.isdir(api_dir):
             return os.path.abspath(comp_path), os.path.abspath(api_dir)
+
     return None, None
 
 
@@ -250,6 +259,8 @@ def start_local_dev_environment(status_callback=None):
         status_callback("3/3 Starting local API server...")
 
     api_venv_python = os.path.join(api_dir, ".venv", "bin", "python")
+    if not os.path.exists(api_venv_python) and os.name == "nt":
+        api_venv_python = os.path.join(api_dir, ".venv", "Scripts", "python.exe")
     api_python = api_venv_python if os.path.exists(api_venv_python) else sys.executable
     src.logger.info(f"Starting API server: {api_python} -m src.main (cwd: {api_dir})")
 

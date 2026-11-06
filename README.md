@@ -137,12 +137,6 @@ The repository includes sample/placeholder assets in `src/static/` so the applic
 - `src/static/acc_numbers.json` - Bank account names and account numbers available for wire transfers.
 - `src/static/header2.jpg` - Letterhead image printed at the top of PDF documents.
 
-Tip for local development: To avoid accidentally committing your private company details or custom bank accounts, tell Git to ignore local changes to these tracked files:
-```bash
-git update-index --skip-worktree src/static/seller_details.txt src/static/seller_address.txt src/static/seller_contact.txt src/static/acc_numbers.json src/static/header2.jpg
-```
-(If you ever need to track changes to them again, run the same command with `--no-skip-worktree`.)
-
 ### 4. Launching the Application
 Execute the client using the launcher script:
 ```bash
